@@ -1,16 +1,24 @@
 import streamlit as st
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Streamlit Cloud를 위한 백엔드 설정
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import font_manager, rc
 import platform
 
-# 한글 폰트 설정
-if platform.system() == 'Windows':
-    font_name = font_manager.FontProperties(fname='c:/Windows/Fonts/malgun.ttf').get_name()
-    plt.rc('font', family=font_name)
-else:
-    plt.rc('font', family='AppleGothic')  # Mac 예시
+# 한글 폰트 설정 (클라우드 환경 대응)
+try:
+    if platform.system() == 'Windows':
+        font_name = font_manager.FontProperties(fname='c:/Windows/Fonts/malgun.ttf').get_name()
+        plt.rc('font', family=font_name)
+    else:
+        # 클라우드 환경에서는 기본 폰트 사용
+        plt.rc('font', family='DejaVu Sans')
+except:
+    # 폰트 설정 실패 시 기본 폰트 사용
+    plt.rc('font', family='DejaVu Sans')
+    
 plt.rcParams['axes.unicode_minus'] = False
 
 # Streamlit 페이지 설정
@@ -27,10 +35,14 @@ st.markdown("---")
 def load_data():
     """데이터 로드 및 전처리"""
     try:
-        df = pd.read_excel("../data/경제활동.xlsx")
+        # 로컬과 클라우드 환경 모두 지원
+        try:
+            df = pd.read_excel("data/경제활동.xlsx")  # 클라우드 환경용
+        except FileNotFoundError:
+            df = pd.read_excel("../data/경제활동.xlsx")  # 로컬 환경용
         return df
     except FileNotFoundError:
-        st.error("../data/경제활동.xlsx 파일을 찾을 수 없습니다.")
+        st.error("경제활동.xlsx 파일을 찾을 수 없습니다. data/ 폴더에 파일이 있는지 확인해주세요.")
         return None
     except Exception as e:
         st.error(f"데이터 로드 중 오류가 발생했습니다: {e}")
