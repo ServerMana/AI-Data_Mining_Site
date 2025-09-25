@@ -241,102 +241,115 @@ if df is not None:
         unemployment_data = process_unemployment_data(df)
         
         if not unemployment_data.empty:
-            col1, col2 = st.columns(2)
+            # 첫 번째 섹션: 차트
+            st.subheader("📈 실업률 추이 그래프")
+            
+            # Plotly를 사용한 차트 (테마 적용)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=unemployment_data['연도'],
+                y=unemployment_data['실업률(%)'],
+                mode='lines+markers',
+                line=dict(color='red', width=3),
+                marker=dict(size=8, color='red'),
+                text=[f'{y:.1f}%' for y in unemployment_data['실업률(%)']],
+                textposition='top center',
+                textfont=dict(size=12),
+                name='실업률'
+            ))
+            
+            fig.update_layout(
+                title='연도별 전국 실업률 추이',
+                xaxis_title='연도',
+                yaxis_title='실업률(%)',
+                font=dict(size=12),
+                showlegend=False,
+                height=600,
+                hovermode='x',
+                template=st.session_state.chart_settings['theme']
+            )
+            
+            fig.update_traces(texttemplate='%{text}', textposition='top center')
+            st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")  # 구분선
+            
+            # 두 번째 섹션: 데이터 테이블
+            st.subheader("📊 실업률 상세 데이터")
+            display_data = unemployment_data[['연도', '실업률(%)']].copy()
+            display_data['실업률(%)'] = display_data['실업률(%)'].round(2)
+            
+            # 선택한 스타일 적용
+            table_colors = get_table_colors(st.session_state.chart_settings['table_style'])
+            
+            # 인터랙티브한 Plotly 테이블
+            fig_table = go.Figure(data=[go.Table(
+                header=dict(
+                    values=['<b>연도</b>', '<b>실업률(%)</b>'],
+                    fill_color=table_colors['header_color'],
+                    align='center',
+                    font=dict(size=16, color='black'),
+                    line=dict(color=table_colors['border_color'], width=1),
+                    height=40
+                ),
+                cells=dict(
+                    values=[display_data['연도'].tolist(), 
+                           [f"{rate:.2f}" for rate in display_data['실업률(%)'].tolist()]],
+                    fill_color=table_colors['cell_color'],
+                    align='center',
+                    font=dict(size=14),
+                    height=35,
+                    line=dict(color=table_colors['border_color'], width=1)
+                )
+            )])
+            
+            fig_table.update_layout(
+                title="연도별 실업률 상세 데이터",
+                height=600,
+                margin=dict(l=20, r=20, t=60, b=20),
+                template=st.session_state.chart_settings['theme']
+            )
+            
+            st.plotly_chart(fig_table, use_container_width=True)
+            
+            st.markdown("---")  # 구분선
+            
+            # 세 번째 섹션: 통계 정보
+            st.subheader("📈 주요 통계")
+            col1, col2, col3 = st.columns(3)
+            
+            avg_rate = unemployment_data['실업률(%)'].mean()
+            max_rate = unemployment_data['실업률(%)'].max()
+            min_rate = unemployment_data['실업률(%)'].min()
             
             with col1:
-                st.subheader("📈 실업률 추이 그래프")
-                
-                # Plotly를 사용한 차트 (테마 적용)
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(
-                    x=unemployment_data['연도'],
-                    y=unemployment_data['실업률(%)'],
-                    mode='lines+markers',
-                    line=dict(color='red', width=3),
-                    marker=dict(size=8, color='red'),
-                    text=[f'{y:.1f}%' for y in unemployment_data['실업률(%)']],
-                    textposition='top center',
-                    textfont=dict(size=12),
-                    name='실업률'
-                ))
-                
-                fig.update_layout(
-                    title='연도별 전국 실업률 추이',
-                    xaxis_title='연도',
-                    yaxis_title='실업률(%)',
-                    font=dict(size=12),
-                    showlegend=False,
-                    height=500,
-                    hovermode='x',
-                    template=st.session_state.chart_settings['theme']
-                )
-                
-                fig.update_traces(texttemplate='%{text}', textposition='top center')
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                st.subheader("📊 실업률 데이터 테이블")
-                display_data = unemployment_data[['연도', '실업률(%)']].copy()
-                display_data['실업률(%)'] = display_data['실업률(%)'].round(2)
-                
-                # 선택한 스타일 적용
-                table_colors = get_table_colors(st.session_state.chart_settings['table_style'])
-                
-                # 인터랙티브한 Plotly 테이블
-                fig_table = go.Figure(data=[go.Table(
-                    header=dict(
-                        values=['<b>연도</b>', '<b>실업률(%)</b>'],
-                        fill_color=table_colors['header_color'],
-                        align='center',
-                        font=dict(size=14, color='black'),
-                        line=dict(color=table_colors['border_color'], width=1)
-                    ),
-                    cells=dict(
-                        values=[display_data['연도'].tolist(), 
-                               [f"{rate:.2f}" for rate in display_data['실업률(%)'].tolist()]],
-                        fill_color=table_colors['cell_color'],
-                        align='center',
-                        font=dict(size=12),
-                        height=30,
-                        line=dict(color=table_colors['border_color'], width=1)
-                    )
-                )])
-                
-                fig_table.update_layout(
-                    title="연도별 실업률 상세 데이터",
-                    height=400,
-                    margin=dict(l=0, r=0, t=30, b=0),
-                    template=st.session_state.chart_settings['theme']
-                )
-                
-                st.plotly_chart(fig_table, use_container_width=True)
-                
-                # 통계 정보
-                st.subheader("📈 주요 통계")
-                avg_rate = unemployment_data['실업률(%)'].mean()
-                max_rate = unemployment_data['실업률(%)'].max()
-                min_rate = unemployment_data['실업률(%)'].min()
-                
                 st.metric("평균 실업률", f"{avg_rate:.2f}%")
+            with col2:
                 st.metric("최고 실업률", f"{max_rate:.2f}%")
+            with col3:
                 st.metric("최저 실업률", f"{min_rate:.2f}%")
     
     elif analysis_type == "지역별 비교 분석":
         st.header("🗺️ 지역별 비교 분석")
         
-        # 분석 지표 선택
-        metric = st.selectbox(
-            "분석 지표 선택",
-            ["경제활동인구 (천명)", "취업자 (천명)", "실업자 (천명)"]
-        )
+        # 옵션 선택 섹션
+        col1, col2 = st.columns(2)
         
-        # 연도 선택
-        available_years = sorted(df['시점'].unique())
-        selected_years = st.multiselect(
-            "분석할 연도 선택 (전체 선택하려면 비워두세요)",
-            available_years,
-            default=available_years[-2:]  # 최근 2년 기본 선택
-        )
+        with col1:
+            # 분석 지표 선택
+            metric = st.selectbox(
+                "분석 지표 선택",
+                ["경제활동인구 (천명)", "취업자 (천명)", "실업자 (천명)"]
+            )
+        
+        with col2:
+            # 연도 선택
+            available_years = sorted(df['시점'].unique())
+            selected_years = st.multiselect(
+                "분석할 연도 선택 (전체 선택하려면 비워두세요)",
+                available_years,
+                default=available_years[-2:]  # 최근 2년 기본 선택
+            )
         
         if not selected_years:
             selected_years = available_years
@@ -344,106 +357,121 @@ if df is not None:
         regional_data, regions = get_regional_data(df, metric, selected_years)
         
         if not regional_data.empty:
-            col1, col2 = st.columns(2)
+            # 첫 번째 섹션: 차트
+            st.subheader(f"📊 {metric} 지역별 추이")
             
-            with col1:
-                st.subheader(f"📊 {metric} 지역별 비교")
-                
-                # 지역별 데이터 준비
-                plot_data = []
-                for _, row in regional_data.iterrows():
-                    for region in regions:
-                        if pd.notnull(row[region]):
-                            plot_data.append({
-                                '연도': row['시점'],
-                                '지역': region,
-                                '값': pd.to_numeric(str(row[region]).replace(',', ''), errors='coerce')
-                            })
-                
-                plot_df = pd.DataFrame(plot_data)
-                plot_df = plot_df.dropna()
-                
-                if not plot_df.empty:
-                    # 상위 5개 지역만 표시
-                    top_regions = plot_df.groupby('지역')['값'].mean().nlargest(5).index
-                    plot_df_filtered = plot_df[plot_df['지역'].isin(top_regions)]
-                    
-                    # Plotly 차트로 변경 (색상 팔레트 적용)
-                    fig = px.line(
-                        plot_df_filtered, 
-                        x='연도', 
-                        y='값', 
-                        color='지역',
-                        title=f'{metric} 지역별 추이 (상위 5개 지역)',
-                        markers=True,
-                        color_discrete_sequence=px.colors.qualitative.__dict__[st.session_state.chart_settings['palette']]
-                    )
-                    
-                    fig.update_layout(
-                        xaxis_title='연도',
-                        yaxis_title=metric,
-                        font=dict(size=12),
-                        height=500,
-                        hovermode='x unified',
-                        template=st.session_state.chart_settings['theme']
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                st.subheader("📋 지역별 데이터 테이블")
-                
-                # 데이터 테이블 준비
-                table_data = regional_data[['시점'] + regions].copy()
-                
-                # 숫자형 변환
+            # 지역별 데이터 준비
+            plot_data = []
+            for _, row in regional_data.iterrows():
                 for region in regions:
-                    table_data[region] = pd.to_numeric(
-                        table_data[region].astype(str).str.replace(',', ''), 
-                        errors='coerce'
-                    )
+                    if pd.notnull(row[region]):
+                        plot_data.append({
+                            '연도': row['시점'],
+                            '지역': region,
+                            '값': pd.to_numeric(str(row[region]).replace(',', ''), errors='coerce')
+                        })
+            
+            plot_df = pd.DataFrame(plot_data)
+            plot_df = plot_df.dropna()
+            
+            if not plot_df.empty:
+                # 상위 5개 지역만 표시
+                top_regions = plot_df.groupby('지역')['값'].mean().nlargest(5).index
+                plot_df_filtered = plot_df[plot_df['지역'].isin(top_regions)]
                 
-                # 인터랙티브한 지역별 데이터 테이블
-                if not table_data.empty:
-                    # 테이블 헤더 준비
-                    headers = ['<b>연도</b>'] + [f'<b>{region}</b>' for region in regions]
-                    
-                    # 테이블 데이터 준비
-                    table_values = [table_data['시점'].tolist()]
-                    for region in regions:
-                        values = []
-                        for val in table_data[region]:
-                            if pd.isna(val):
-                                values.append('-')
-                            else:
-                                values.append(f"{val:,.0f}")
-                        table_values.append(values)
-                    
-                    # Plotly 테이블 생성
-                    fig_table = go.Figure(data=[go.Table(
-                        header=dict(
-                            values=headers,
-                            fill_color='lightgreen',
-                            align='center',
-                            font=dict(size=12, color='black'),
-                            height=40
-                        ),
-                        cells=dict(
-                            values=table_values,
-                            fill_color='white',
-                            align='center',
-                            font=dict(size=10),
-                            height=30
-                        )
-                    )])
-                    
-                    fig_table.update_layout(
-                        title=f"{metric} 지역별 상세 데이터",
-                        height=500,
-                        margin=dict(l=0, r=0, t=30, b=0)
+                # Plotly 차트로 변경 (색상 팔레트 적용)
+                fig = px.line(
+                    plot_df_filtered, 
+                    x='연도', 
+                    y='값', 
+                    color='지역',
+                    title=f'{metric} 지역별 추이 (상위 5개 지역)',
+                    markers=True,
+                    color_discrete_sequence=px.colors.qualitative.__dict__[st.session_state.chart_settings['palette']]
+                )
+                
+                fig.update_layout(
+                    xaxis_title='연도',
+                    yaxis_title=metric,
+                    font=dict(size=12),
+                    height=600,
+                    hovermode='x unified',
+                    template=st.session_state.chart_settings['theme']
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")  # 구분선
+            
+            # 두 번째 섹션: 전체 지역 데이터 테이블
+            st.subheader("📋 지역별 상세 데이터")
+            
+            # 데이터 테이블 준비
+            table_data = regional_data[['시점'] + regions].copy()
+            
+            # 숫자형 변환
+            for region in regions:
+                table_data[region] = pd.to_numeric(
+                    table_data[region].astype(str).str.replace(',', ''), 
+                    errors='coerce'
+                )
+            
+            # 인터랙티브한 지역별 데이터 테이블
+            if not table_data.empty:
+                # 표가 너무 클 경우를 대비해 스크롤 가능한 테이블로 생성
+                st.dataframe(
+                    table_data,
+                    use_container_width=True,
+                    height=400
+                )
+                
+                # 추가로 Plotly 테이블도 제공 (더 인터랙티브)
+                st.subheader("🔍 인터랙티브 테이블")
+                
+                # 테이블 헤더 준비 (첫 5개 지역만)
+                display_regions = regions[:5] if len(regions) > 5 else regions
+                headers = ['<b>연도</b>'] + [f'<b>{region}</b>' for region in display_regions]
+                
+                # 테이블 데이터 준비
+                table_values = [table_data['시점'].tolist()]
+                for region in display_regions:
+                    values = []
+                    for val in table_data[region]:
+                        if pd.isna(val):
+                            values.append('-')
+                        else:
+                            values.append(f"{val:,.0f}")
+                    table_values.append(values)
+                
+                # Plotly 테이블 생성
+                table_colors = get_table_colors(st.session_state.chart_settings['table_style'])
+                fig_table = go.Figure(data=[go.Table(
+                    header=dict(
+                        values=headers,
+                        fill_color=table_colors['header_color'],
+                        align='center',
+                        font=dict(size=14, color='black'),
+                        height=40,
+                        line=dict(color=table_colors['border_color'], width=1)
+                    ),
+                    cells=dict(
+                        values=table_values,
+                        fill_color=table_colors['cell_color'],
+                        align='center',
+                        font=dict(size=12),
+                        height=35,
+                        line=dict(color=table_colors['border_color'], width=1)
                     )
-                    
-                    st.plotly_chart(fig_table, use_container_width=True)
+                )])
+                
+                fig_table.update_layout(
+                    title=f"{metric} 지역별 상세 데이터 (주요 지역)",
+                    height=600,
+                    margin=dict(l=20, r=20, t=60, b=20),
+                    template=st.session_state.chart_settings['theme']
+                )
+                
+                st.plotly_chart(fig_table, use_container_width=True)
     
     elif analysis_type == "연도별 상세 분석":
         st.header("📅 연도별 상세 분석")
@@ -455,9 +483,11 @@ if df is not None:
         year_data = df[df['시점'] == selected_year]
         
         if not year_data.empty:
+            # 전국 통계 요약
+            st.subheader(f"📊 {selected_year}년 전국 현황")
             col1, col2, col3 = st.columns(3)
             
-            # 각 지표별 데이터 추출
+            # 각 지표별 전국 데이터 표시
             metrics = ['경제활동인구 (천명)', '취업자 (천명)', '실업자 (천명)']
             
             for i, metric in enumerate(metrics):
@@ -465,65 +495,133 @@ if df is not None:
                 
                 if not metric_data.empty:
                     with [col1, col2, col3][i]:
-                        st.subheader(f"📊 {metric}")
-                        
-                        # 전국 계 값
                         total_value = metric_data.iloc[0]['계']
                         if pd.notnull(total_value):
-                            st.metric("전국", f"{total_value:,}")
+                            st.metric(f"{metric.replace(' (천명)', '')}", f"{total_value:,} 천명")
+            
+            st.markdown("---")  # 구분선
+            
+            # 각 지표별 상세 분석 (개별 섹션으로 분리)
+            for metric in metrics:
+                metric_data = year_data[year_data['항목'] == metric]
+                
+                if not metric_data.empty:
+                    st.subheader(f"🏆 {metric} 지역별 순위")
+                    
+                    # 지역별 데이터 수집
+                    regions = [col for col in metric_data.columns if col not in ['항목', '시점', '계']]
+                    region_values = []
+                    
+                    for region in regions:
+                        value = metric_data.iloc[0][region]
+                        if pd.notnull(value):
+                            numeric_value = pd.to_numeric(str(value).replace(',', ''), errors='coerce')
+                            if pd.notnull(numeric_value):
+                                region_values.append((region, numeric_value))
+                    
+                    # 모든 지역을 순위로 정렬
+                    all_regions = sorted(region_values, key=lambda x: x[1], reverse=True)
+                    
+                    if all_regions:
+                        # 전체 지역 데이터프레임 생성
+                        region_df = pd.DataFrame(all_regions, columns=['지역', '값'])
+                        region_df['순위'] = range(1, len(region_df) + 1)
+                        region_df = region_df[['순위', '지역', '값']]
                         
-                        # 지역별 상위 5개
-                        regions = [col for col in metric_data.columns if col not in ['항목', '시점', '계']]
-                        region_values = []
+                        # 두 개의 컬럼으로 나누어 표시
+                        col_left, col_right = st.columns(2)
                         
-                        for region in regions:
-                            value = metric_data.iloc[0][region]
-                            if pd.notnull(value):
-                                numeric_value = pd.to_numeric(str(value).replace(',', ''), errors='coerce')
-                                if pd.notnull(numeric_value):
-                                    region_values.append((region, numeric_value))
-                        
-                        # 상위 5개 지역
-                        top_regions = sorted(region_values, key=lambda x: x[1], reverse=True)[:5]
-                        
-                        # 인터랙티브한 상위 지역 테이블
-                        if top_regions:
-                            region_df = pd.DataFrame(top_regions, columns=['지역', '값'])
-                            region_df['순위'] = range(1, len(region_df) + 1)
-                            region_df = region_df[['순위', '지역', '값']]
+                        with col_left:
+                            st.write("**상위 지역 (1-10위)**")
+                            top_10 = region_df.head(10)
                             
-                            fig_rank = go.Figure(data=[go.Table(
+                            # 상위 10개 지역 테이블
+                            table_colors = get_table_colors(st.session_state.chart_settings['table_style'])
+                            fig_top = go.Figure(data=[go.Table(
                                 header=dict(
-                                    values=['<b>순위</b>', '<b>지역</b>', '<b>값</b>'],
-                                    fill_color='lightcoral',
+                                    values=['<b>순위</b>', '<b>지역</b>', '<b>값 (천명)</b>'],
+                                    fill_color=table_colors['header_color'],
                                     align='center',
-                                    font=dict(size=12, color='black')
+                                    font=dict(size=14, color='black'),
+                                    height=40,
+                                    line=dict(color=table_colors['border_color'], width=1)
                                 ),
                                 cells=dict(
                                     values=[
-                                        region_df['순위'].tolist(),
-                                        region_df['지역'].tolist(),
-                                        [f"{val:,.0f}" for val in region_df['값'].tolist()]
+                                        top_10['순위'].tolist(),
+                                        top_10['지역'].tolist(),
+                                        [f"{val:,.0f}" for val in top_10['값'].tolist()]
                                     ],
-                                    fill_color='white',
+                                    fill_color=table_colors['cell_color'],
                                     align='center',
-                                    font=dict(size=11),
-                                    height=35
+                                    font=dict(size=12),
+                                    height=35,
+                                    line=dict(color=table_colors['border_color'], width=1)
                                 )
                             )])
                             
-                            fig_rank.update_layout(
-                                title=f"{metric} 상위 5개 지역",
-                                height=300,
-                                margin=dict(l=0, r=0, t=30, b=0)
+                            fig_top.update_layout(
+                                title=f"{metric} 상위 10개 지역",
+                                height=500,
+                                margin=dict(l=10, r=10, t=60, b=20),
+                                template=st.session_state.chart_settings['theme']
                             )
                             
-                            st.plotly_chart(fig_rank, use_container_width=True)
+                            st.plotly_chart(fig_top, use_container_width=True)
+                        
+                        with col_right:
+                            st.write("**하위 지역 (하위 10위)**")
+                            bottom_10 = region_df.tail(10).sort_values('순위')
+                            
+                            # 하위 10개 지역 테이블
+                            fig_bottom = go.Figure(data=[go.Table(
+                                header=dict(
+                                    values=['<b>순위</b>', '<b>지역</b>', '<b>값 (천명)</b>'],
+                                    fill_color='lightcoral',
+                                    align='center',
+                                    font=dict(size=14, color='black'),
+                                    height=40,
+                                    line=dict(color='gray', width=1)
+                                ),
+                                cells=dict(
+                                    values=[
+                                        bottom_10['순위'].tolist(),
+                                        bottom_10['지역'].tolist(),
+                                        [f"{val:,.0f}" for val in bottom_10['값'].tolist()]
+                                    ],
+                                    fill_color='white',
+                                    align='center',
+                                    font=dict(size=12),
+                                    height=35,
+                                    line=dict(color='gray', width=1)
+                                )
+                            )])
+                            
+                            fig_bottom.update_layout(
+                                title=f"{metric} 하위 10개 지역",
+                                height=500,
+                                margin=dict(l=10, r=10, t=60, b=20),
+                                template=st.session_state.chart_settings['theme']
+                            )
+                            
+                            st.plotly_chart(fig_bottom, use_container_width=True)
+                        
+                        # 전체 데이터 다운로드 옵션
+                        csv_data = region_df.to_csv(index=False, encoding='utf-8-sig')
+                        st.download_button(
+                            label=f"📁 {metric} 전체 지역 순위 다운로드",
+                            data=csv_data,
+                            file_name=f'{selected_year}년_{metric.replace(" (천명)", "")}_지역별_순위.csv',
+                            mime='text/csv'
+                        )
+                    
+                    st.markdown("---")  # 각 지표 간 구분선
     
     elif analysis_type == "원본 데이터 보기":
         st.header("📋 원본 데이터")
         
-        # 필터 옵션
+        # 필터 옵션 섹션
+        st.subheader("🔍 데이터 필터링")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -540,10 +638,11 @@ if df is not None:
             (df['시점'].isin(selected_years))
         ]
         
-        st.subheader(f"📊 필터링된 데이터 ({len(filtered_df)}개 행)")
+        st.markdown("---")  # 구분선
         
-        # 인터랙티브한 필터링 옵션 추가
-        col3, col4 = st.columns(2)
+        # 데이터 표시 옵션 섹션
+        st.subheader(f"📊 데이터 표시 옵션 (총 {len(filtered_df):,}개 행)")
+        col3, col4, col5 = st.columns(3)
         
         with col3:
             # 페이지네이션을 위한 행 수 선택
@@ -553,6 +652,10 @@ if df is not None:
             # 정렬 옵션
             sort_column = st.selectbox("정렬 기준 열", filtered_df.columns.tolist())
             sort_ascending = st.checkbox("오름차순 정렬", value=True)
+        
+        with col5:
+            # 표시 모드 선택
+            display_mode = st.selectbox("표시 모드", ["편집 가능한 표", "기본 표", "인터랙티브 표"])
         
         # 데이터 정렬
         if sort_column:
@@ -569,30 +672,111 @@ if df is not None:
             end_idx = min(start_idx + rows_per_page, total_rows)
             page_data = filtered_df.iloc[start_idx:end_idx]
             
-            st.write(f"📄 페이지 {page_number}/{total_pages} (행 {start_idx+1}-{end_idx}/{total_rows})")
+            st.info(f"📄 현재 페이지: {page_number}/{total_pages} | 표시 행: {start_idx+1}~{end_idx} / 전체 {total_rows:,}행")
         else:
             page_data = filtered_df
         
-        # 고급 데이터프레임 표시 (편집 가능)
-        edited_df = st.data_editor(
-            page_data,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                col: st.column_config.NumberColumn(
-                    format="%.2f" if col in ['계'] else None
-                ) for col in page_data.columns if page_data[col].dtype in ['int64', 'float64']
-            }
-        )
+        st.markdown("---")  # 구분선
         
-        # 데이터 다운로드
-        csv = filtered_df.to_csv(index=False, encoding='utf-8-sig')
-        st.download_button(
-            label="CSV 파일로 다운로드",
-            data=csv,
-            file_name='경제활동_데이터.csv',
-            mime='text/csv'
-        )
+        # 데이터 표시 섹션
+        st.subheader("📋 데이터 테이블")
+        
+        if display_mode == "편집 가능한 표":
+            # 고급 데이터프레임 표시 (편집 가능)
+            edited_df = st.data_editor(
+                page_data,
+                use_container_width=True,
+                hide_index=True,
+                height=600,
+                column_config={
+                    col: st.column_config.NumberColumn(
+                        format="%.2f" if col in ['계'] else None
+                    ) for col in page_data.columns if page_data[col].dtype in ['int64', 'float64']
+                }
+            )
+            
+        elif display_mode == "기본 표":
+            # 기본 데이터프레임
+            st.dataframe(
+                page_data,
+                use_container_width=True,
+                height=600
+            )
+            
+        else:  # 인터랙티브 표
+            # Plotly 인터랙티브 테이블
+            if not page_data.empty:
+                # 테이블 헤더 준비
+                headers = [f'<b>{col}</b>' for col in page_data.columns]
+                
+                # 테이블 데이터 준비
+                table_values = []
+                for col in page_data.columns:
+                    values = []
+                    for val in page_data[col]:
+                        if pd.isna(val):
+                            values.append('-')
+                        elif isinstance(val, (int, float)):
+                            values.append(f"{val:,.0f}" if val == int(val) else f"{val:.2f}")
+                        else:
+                            values.append(str(val))
+                    table_values.append(values)
+                
+                # Plotly 테이블 생성
+                table_colors = get_table_colors(st.session_state.chart_settings['table_style'])
+                fig_table = go.Figure(data=[go.Table(
+                    header=dict(
+                        values=headers,
+                        fill_color=table_colors['header_color'],
+                        align='center',
+                        font=dict(size=12, color='black'),
+                        height=40,
+                        line=dict(color=table_colors['border_color'], width=1)
+                    ),
+                    cells=dict(
+                        values=table_values,
+                        fill_color=table_colors['cell_color'],
+                        align='center',
+                        font=dict(size=10),
+                        height=30,
+                        line=dict(color=table_colors['border_color'], width=1)
+                    )
+                )])
+                
+                fig_table.update_layout(
+                    title="원본 데이터 인터랙티브 테이블",
+                    height=700,
+                    margin=dict(l=20, r=20, t=60, b=20),
+                    template=st.session_state.chart_settings['theme']
+                )
+                
+                st.plotly_chart(fig_table, use_container_width=True)
+        
+        st.markdown("---")  # 구분선
+        
+        # 데이터 다운로드 섹션
+        st.subheader("💾 데이터 다운로드")
+        col_download1, col_download2 = st.columns(2)
+        
+        with col_download1:
+            # 현재 페이지 데이터 다운로드
+            csv_page = page_data.to_csv(index=False, encoding='utf-8-sig')
+            st.download_button(
+                label=f"📄 현재 페이지 데이터 다운로드 ({len(page_data)}행)",
+                data=csv_page,
+                file_name=f'경제활동_데이터_페이지{page_number if total_pages > 1 else 1}.csv',
+                mime='text/csv'
+            )
+        
+        with col_download2:
+            # 전체 필터링된 데이터 다운로드
+            csv_all = filtered_df.to_csv(index=False, encoding='utf-8-sig')
+            st.download_button(
+                label=f"📁 전체 필터링 데이터 다운로드 ({len(filtered_df):,}행)",
+                data=csv_all,
+                file_name='경제활동_데이터_전체.csv',
+                mime='text/csv'
+            )
 
 else:
     st.error("데이터를 불러올 수 없습니다. data/경제활동.xlsx 파일이 존재하는지 확인해주세요.")
